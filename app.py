@@ -18,6 +18,10 @@ app = Flask(__name__)
 if not os.path.exists(DB_PATH):
     init_database()
 
+# Claude用MCPコネクタ（環境変数 MCP_TOKEN が設定されている時だけ有効）
+from mcp_server import mcp_bp
+app.register_blueprint(mcp_bp)
+
 # ========== API エンドポイント ==========
 
 @app.route('/api/editors', methods=['GET'])
