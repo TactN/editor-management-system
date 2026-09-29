@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}全編集者一覧 - HUG&SHAKE 編集者管理{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">
+    <i class="fas fa-list me-2"></i>全編集者一覧
+</h1>
+
+<!-- 検索・フィルター -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <input type="text" id="searchInput" class="form-control" placeholder="編集者名を検索...">
+            </div>
+            <div class="col-md-6">
+                <select id="statusFilter" class="form-select">
+                    <option value="">すべてのステータス</option>
+                    {% for status in statuses %}
+                    <option value="{{ status }}">{{ status }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 編集者テーブル -->
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0" id="editorsTable">
+            <thead class="table-light">
+                <tr>
+                    <th style="width: 15%;">編集者名</th>
+                    <th style="width: 10%;">区分</th>
+                    <th style="width: 15%;">ステータス</th>
+                    <th style="width: 30%;">所感</th>
+                    <th style="width: 15%;">更新情報</th>
+                    <th style="width: 15%;">アクション</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for editor in editors %}
+                <tr class="editor-row" data-name="{{ editor.name }}" data-status="{{ editor.current_status }}" data-division="{{ editor.division }}">
+                    <td><strong>{{ editor.name }}</strong></td>
+                    <td>
+                        <span class="badge" style="background-color: 
+                            {% if editor.division == '継続発注' %}var(--active-color)
+                            {% elif editor.division == '候補' %}var(--candidate-color)
+                            {% else %}var(--rejected-color){% endif %};">
+                            {{ editor.division }}
+                        </span>
+                    </td>
+                    <td>
+                        <select class="form-select form-select-sm status-select" data-editor="{{ editor.name }}">
+                            {% for status in statuses %}
+                            <option value="{{ status }}" {% if status == editor.current_status %}selected{% endif %}>
+                                {{ status }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                    <td>
+                        <small>{{ editor.impressions or '-' }}</small>
+                    </td>
+                    <td>
+                        <small>
+                            <div>{{ editor.last_updated }}</div>
+                            <div style="color: #94a3b8;">{{ editor.updated_by }}</div>
+                        </small>
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary update-btn" data-editor="{{ editor.name }}">
+                            <i class="fas fa-save"></i> 更新
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 検索機能
+    document.getElementById('searchInput').addEventListener('keyup', function() {
+        filterTable();
+    });
+    
+    // フィルター機能
+    document.getElementById('statusFilter').addEventListener('change', function() {
+        filterTable();
+    });
+    
+    // フィルター関数
+    function filterTable() {
+        const searchValue = document.getElementById('searchInput').value.toLowerCase();
+        const statusValue = document.getElementById('statusFilter').value;
+        
+        document.querySelectorAll('.editor-row').forEach(row => {
+            const name = row.getAttribute('data-name').toLowerCase();
+            const status = row.getAttribute('data-status');
+            
+            let show = name.includes(searchValue);
+            if (statusValue) show = show && (status === statusValue);
+            
+            row.style.display = show ? '' : 'none';
+        });
+    }
+    
+    // ステータス更新
+    document.querySelectorAll('.update-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const editorName = this.getAttribute('data-editor');
+            const row = this.closest('tr');
+            const newStatus = row.querySelector('.status-select').value;
+            
+            updateEditor(editorName, newStatus);
+        });
+    });
+    
+    function updateEditor(name, status) {
+        fetch('/api/editors/update', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                name: name,
+                status: status,
+                updated_by: 'Web UI'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('✅ ' + data.message);
+                location.reload();
+            } else {
+                alert('❌ ' + data.message);
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

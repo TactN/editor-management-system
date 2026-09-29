@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}HUG&SHAKE 編集者管理システム{% endblock %}</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --active-color: #10b981;
+            --candidate-color: #f59e0b;
+            --rejected-color: #ef4444;
+        }
+        
+        body {
+            background-color: #f8fafc;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #8b5cf6 100%);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.25rem;
+            letter-spacing: 0.5px;
+        }
+        
+        .sidebar {
+            background: white;
+            border-right: 1px solid #e2e8f0;
+            min-height: calc(100vh - 56px);
+            padding: 20px 0;
+        }
+        
+        .sidebar a {
+            color: #475569;
+            text-decoration: none;
+            padding: 12px 20px;
+            display: block;
+            border-left: 3px solid transparent;
+            transition: all 0.2s;
+        }
+        
+        .sidebar a:hover,
+        .sidebar a.active {
+            background-color: #f1f5f9;
+            border-left-color: var(--primary-color);
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+        
+        .content {
+            padding: 30px 20px;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .badge-active {
+            background-color: var(--active-color);
+        }
+        
+        .badge-candidate {
+            background-color: var(--candidate-color);
+        }
+        
+        .badge-rejected {
+            background-color: var(--rejected-color);
+        }
+        
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .editor-card {
+            border-top: 4px solid var(--primary-color);
+        }
+        
+        .footer {
+            background-color: white;
+            border-top: 1px solid #e2e8f0;
+            padding: 20px;
+            text-align: center;
+            color: #94a3b8;
+            margin-top: 40px;
+        }
+        
+        .stat-box {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        
+        .stat-label {
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- ナビゲーションバー -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-video me-2"></i>HUG&SHAKE 編集者管理
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <div class="ms-auto text-white">
+                    <small>最終更新: {{ last_updated }}</small>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid" style="margin-top: 0;">
+        <div class="row" style="min-height: calc(100vh - 56px);">
+            <!-- サイドバー -->
+            <div class="col-md-2 sidebar">
+                <a href="/" class="{% if request.path == '/' %}active{% endif %}">
+                    <i class="fas fa-home me-2"></i>ダッシュボード
+                </a>
+                <a href="/all-editors" class="{% if request.path == '/all-editors' %}active{% endif %}">
+                    <i class="fas fa-list me-2"></i>全編集者一覧
+                </a>
+                <a href="/active-editors" class="{% if request.path == '/active-editors' %}active{% endif %}">
+                    <i class="fas fa-check-circle me-2"></i>継続発注者
+                </a>
+                <a href="/candidate-editors" class="{% if request.path == '/candidate-editors' %}active{% endif %}">
+                    <i class="fas fa-star me-2"></i>候補者
+                </a>
+                <a href="/rejected-editors" class="{% if request.path == '/rejected-editors' %}active{% endif %}">
+                    <i class="fas fa-times-circle me-2"></i>見送り
+                </a>
+                <hr style="margin: 20px 0; border-color: #e2e8f0;">
+                <div style="padding: 0 20px; color: #94a3b8; font-size: 0.85rem;">
+                    <p><strong>システム情報</strong></p>
+                    <p>このシステムは、Claude チャットからの自動入力に対応しています。</p>
+                </div>
+            </div>
+
+            <!-- メインコンテンツ -->
+            <div class="col-md-10 content">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <!-- フッター -->
+    <div class="footer">
+        <p>&copy; 2026 HUG&SHAKE 編集者管理システム | SQLite + Flask</p>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // ナビゲーション自動選択
+        document.addEventListener('DOMContentLoaded', function() {
+            const current = window.location.pathname;
+            document.querySelectorAll('.sidebar a').forEach(link => {
+                if (link.getAttribute('href') === current) {
+                    link.classList.add('active');
+                } else {
+                    link.classList.remove('active');
+                }
+            });
+        });
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

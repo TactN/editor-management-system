@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - HUG&SHAKE 編集者管理{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">
+    <i class="fas fa-folder me-2"></i>{{ title }}
+</h1>
+
+<!-- 統計 -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="alert alert-info" role="alert">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>{{ title }}:</strong> {{ editors|length }}名
+        </div>
+    </div>
+</div>
+
+<!-- 編集者カード表示 -->
+{% if editors %}
+<div class="row">
+    {% for editor in editors %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card editor-card h-100">
+            <div class="card-header bg-light">
+                <h6 class="mb-0">{{ editor.name }}</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <span class="status-badge" style="background-color: 
+                        {% if editor.current_status == '継続発注中' %}var(--active-color)
+                        {% elif editor.current_status in ['テスト前', 'テスト中', 'テスト合格'] %}var(--candidate-color)
+                        {% else %}var(--rejected-color){% endif %}; color: white;">
+                        {{ editor.current_status }}
+                    </span>
+                </div>
+                
+                {% if editor.impressions %}
+                <div class="mb-3">
+                    <p class="mb-1" style="font-size: 0.85rem; color: #64748b;">
+                        <strong>所感</strong>
+                    </p>
+                    <p class="mb-0" style="font-size: 0.9rem;">{{ editor.impressions }}</p>
+                </div>
+                {% endif %}
+                
+                <!-- ステータス変更フォーム -->
+                <div class="mb-3">
+                    <label class="form-label" style="font-size: 0.85rem;">ステータス変更</label>
+                    <select class="form-select form-select-sm status-select" data-editor="{{ editor.name }}">
+                        {% for status in statuses %}
+                        <option value="{{ status }}" {% if status == editor.current_status %}selected{% endif %}>
+                            {{ status }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <button class="btn btn-sm btn-primary w-100 update-btn" data-editor="{{ editor.name }}">
+                    <i class="fas fa-save me-1"></i>更新
+                </button>
+            </div>
+            
+            <div class="card-footer bg-light">
+                <small style="color: #94a3b8;">
+                    <div><i class="fas fa-calendar me-1"></i>{{ editor.last_updated }}</div>
+                    <div><i class="fas fa-user me-1"></i>{{ editor.updated_by }}</div>
+                </small>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="alert alert-warning" role="alert">
+    <i class="fas fa-exclamation-triangle me-2"></i>
+    このカテゴリに編集者がいません。
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.update-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const editorName = this.getAttribute('data-editor');
+            const row = this.closest('.card');
+            const newStatus = row.querySelector('.status-select').value;
+            
+            updateEditor(editorName, newStatus);
+        });
+    });
+    
+    function updateEditor(name, status) {
+        fetch('/api/editors/update', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                name: name,
+                status: status,
+                updated_by: 'Web UI'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('✅ ' + data.message);
+                location.reload();
+            } else {
+                alert('❌ ' + data.message);
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
